@@ -1,34 +1,14 @@
-public class PacMan {
-    private int x;
-    private int y;
+public class PacMan extends Entity {
     private int score;
 
     public PacMan() {
-        this.x = 1;
-        this.y = 1;
+        super(1, 1);  // Call parent constructor
         this.score = 0;
     }
 
     public PacMan(int x, int y) {
-        this.x = x;
-        this.y = y;
+        super(x, y);  // Call parent constructor
         this.score = 0;
-    }
-
-    public void setX(int value) {
-        this.x = value;
-    }
-
-    public int getX() {
-        return this.x;
-    }
-
-    public void setY(int value) {
-        this.y = value;
-    }
-
-    public int getY() {
-        return this.y;
     }
 
     public void setScore(int value) {
@@ -43,6 +23,13 @@ public class PacMan {
         this.score++;
     }
 
+
+    @Override
+    public void move(char[][] maze, int rows, int cols) {
+        // PacMan doesn't move automatically - movement handled by user input
+    }
+
+    // Specific PacMan movement based on direction
     public void move(String direction) {
         if (direction.equals("w")) {
             this.setX(this.getX() - 1);
@@ -53,5 +40,11 @@ public class PacMan {
         } else if (direction.equals("d")) {
             this.setY(this.getY() + 1);
         }
+    }
+
+    // Override abstract method from Entity
+    @Override
+    public String getSymbol() {
+        return "P1";
     }
 }

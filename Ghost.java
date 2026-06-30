@@ -1,36 +1,26 @@
 import java.util.Random;
 
-public class Ghost {
-    private int x;
-    private int y;
+
+public class Ghost extends Entity {
+    private String ghostId;  // To differentiate between ghosts
 
     public Ghost() {
-        this.x = 0;
-        this.y = 0;
+        super(0, 0);
+        this.ghostId = "G";
     }
 
-    public Ghost(int x, int y) {
-        this.x = x;
-        this.y = y;
+    public Ghost(int x, int y, String ghostId) {
+        super(x, y);
+        this.ghostId = ghostId;
     }
 
-    public void setX(int value) {
-        this.x = value;
+    public String getGhostId() {
+        return ghostId;
     }
 
-    public int getX() {
-        return this.x;
-    }
-
-    public void setY(int value) {
-        this.y = value;
-    }
-
-    public int getY() {
-        return this.y;
-    }
-
-    public void move(char[][] maze, int m, int n) {
+    // Override abstract method from Entity
+    @Override
+    public void move(char[][] maze, int rows, int cols) {
         Random rand = new Random();
         int randomMove = rand.nextInt(4);
         int newX = this.getX();
@@ -46,10 +36,16 @@ public class Ghost {
             newY = newY + 1;
         }
 
-        // yaha yay pahlay coords check kar raha, than borders and obstacles inside the map to ensure we can move.
-        if (newX >= 0 && newY >= 0 && newX < m && newY < n && maze[newX][newY] != '#') {
+        // Check coordinates first, then borders and obstacles
+        if (newX >= 0 && newY >= 0 && newX < rows && newY < cols && maze[newX][newY] != '#') {
             this.setX(newX);
             this.setY(newY);
         }
+    }
+
+    // Override abstract method from Entity
+    @Override
+    public String getSymbol() {
+        return ghostId;
     }
 }

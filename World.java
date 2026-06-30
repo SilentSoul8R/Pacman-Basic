@@ -1,30 +1,29 @@
+import java.util.ArrayList;
+import java.util.List;
+
 public class World {
     private char[][] maze;
     private int rows;
     private int cols;
     private PacMan pacman;
-    private Ghost ghost1;
-    private Ghost ghost2;
+    private List<Ghost> ghosts;  // Use List for polymorphism
     private int foodCount;
     private int lives;
     private volatile boolean gameRunning;
     private RawConsoleInput rawInput;
     private StringBuilder screenBuffer;
 
-    //A BlockingQueue is an interface within the java.util.concurrent package that extends Queue.
-    //A BlockingQueue in Java is a thread-safe data structure that automatically handles flow control, while a LinkedBlockingQueue is a common, optionally-bounded implementation.
-    //In this context, synchronization is the fundamental mechanism used internally by BlockingQueue implementations (like LinkedBlockingQueue) to ensure their thread safety.
-    //Java uses explicit locks (specifically the ReentrantLock class and associated Condition objects) rather than traditional synchronized blocks for many concurrent utilities [1].
-    //These locks manage access to the queue's internal state. When one thread is adding or removing an element, the lock prevents other threads from corrupting the data structure [1].
-    //The blocking operations (put and take) use these locks and conditions to efficiently suspend and resume threads when the queue's state changes (e.g., from empty to not empty, or full to not full) [1].
-
     public World(int r, int c) {
         this.rows = r;
         this.cols = c;
         this.maze = new char[rows][cols];
         this.pacman = new PacMan(1, 1);
-        this.ghost1 = new Ghost(rows - 2, cols - 2);
-        this.ghost2 = new Ghost(rows - 2, 1);
+
+        // Store ghosts in a list
+        this.ghosts = new ArrayList<>();
+        this.ghosts.add(new Ghost(rows - 2, cols - 2, "G1"));
+        this.ghosts.add(new Ghost(rows - 2, 1, "G2"));
+
         this.foodCount = 0;
         this.lives = 5;
         this.gameRunning = true;
@@ -33,7 +32,7 @@ public class World {
         initializeMaze();
     }
 
-    // Getter methods for JLineGameConsole
+
     public char[][] getMaze() {
         return maze;
     }
@@ -50,12 +49,8 @@ public class World {
         return pacman;
     }
 
-    public Ghost getGhost1() {
-        return ghost1;
-    }
-
-    public Ghost getGhost2() {
-        return ghost2;
+    public List<Ghost> getGhosts() {
+        return ghosts;
     }
 
     public int getFoodCount() {
@@ -86,14 +81,17 @@ public class World {
                     maze[i][j] = '#';
                 }
                 // Vertical inner walls
-                else if ((j == 5 || j == 25) && i > 5 && i < 14) {
+                else if ((j == 7 || j == 25) && i > 2 && i < 14) {
                     maze[i][j] = '#';
                 }
                 // Small vertical sections
-                else if (i == 17 && j >= 3 && j <= 3) {
+                else if (i == 10 && j >= 3 && j <= 3) {
                     maze[i][j] = '#';
                 }
                 // Inner maze structures
+                else if (i == 8 && j > 13 && j <= 17) {
+                    maze[i][j] = '#';
+                }
                 else if (i == 7 && j >= 7 && j <= 10) {
                     maze[i][j] = '#';
                 }
@@ -106,31 +104,16 @@ public class World {
                 else if (i == 14 && j >= 7 && j <= 9) {
                     maze[i][j] = '#';
                 }
-                else if ((i == 13 && j == 9) || (j == 7 && i >= 9 && i <= 12)) {
+                else if (j == 19 && i > 8 && i < 11) {
                     maze[i][j] = '#';
                 }
-                else if (j == 13 && i > 5 && i <= 8) {
+                else if (i == 6 && j > 20 && j < 25) {
                     maze[i][j] = '#';
                 }
-                else if (i == 8 && j > 13 && j <= 17) {
+                else if (i == 5 && j > 14 && j <= 19) {
                     maze[i][j] = '#';
                 }
-                else if (j == 17 && i > 8 && i < 15) {
-                    maze[i][j] = '#';
-                }
-                else if (i == 14 && j > 17 && j <= 22) {
-                    maze[i][j] = '#';
-                }
-                else if (j == 19 && i > 8 && i <= 11) {
-                    maze[i][j] = '#';
-                }
-                else if (i == 6 && j > 19 && j < 25) {
-                    maze[i][j] = '#';
-                }
-                else if (i == 5 && j > 14 && j <= 18) {
-                    maze[i][j] = '#';
-                }
-                // Food dots made in maze
+                // Food dots
                 else {
                     maze[i][j] = '.';
                     foodCount++;
@@ -144,38 +127,55 @@ public class World {
     }
 
     public void displayBoard() {
-        screenBuffer.setLength(0);  // Clear buffer
-        
-        // Build the entire frame in a buffer first
-        //A screen buffer is like a "canvas" in memory where text and colors are written. The terminal/console reads from this buffer to display content on screen.
+        screenBuffer.setLength(0);
+
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
-                if (i == pacman.getX() && j == pacman.getY()) {
-                    screenBuffer.append("P1");
-                } else if (i == ghost1.getX() && j == ghost1.getY()) {
-                    screenBuffer.append("G1");
-                } else if (i == ghost2.getX() && j == ghost2.getY()) {
-                    screenBuffer.append("G2");
-                } else {
+                boolean entityDrawn = false;
+
+                // Check PacMan position
+                if (pacman.isAt(i, j)) {
+                    screenBuffer.append(pacman.getSymbol());
+                    entityDrawn = true;
+                }
+
+                // Check all ghosts using common Entity interface
+                if (!entityDrawn) {
+                    for (Entity ghost : ghosts) {
+                        if (ghost.isAt(i, j)) {
+                            screenBuffer.append(ghost.getSymbol());
+                            entityDrawn = true;
+                            break;
+                        }
+                    }
+                }
+
+                // Draw maze if no entity
+                if (!entityDrawn) {
                     screenBuffer.append(maze[i][j]).append(" ");
                 }
             }
             screenBuffer.append("\n");
         }
+
         screenBuffer.append("\nScore: ").append(pacman.getScore())
-                   .append(" | Lives: ").append(lives)
-                   .append(" | Food Remaining: ").append(foodCount).append("\n");
+                .append(" | Lives: ").append(lives)
+                .append(" | Food Remaining: ").append(foodCount).append("\n");
         screenBuffer.append("Move (w/a/s/d) or q to quit - NO ENTER NEEDED!\n");
-        
-        // Clear screen and print entire buffer at once for smooth rendering
+
         ConsoleUtils.clearScreen();
         System.out.print(screenBuffer.toString());
         System.out.flush();
     }
 
+    // Use common Entity interface for collision detection
     public boolean detectCollision() {
-        return (pacman.getX() == ghost1.getX() && pacman.getY() == ghost1.getY()) ||
-                (pacman.getX() == ghost2.getX() && pacman.getY() == ghost2.getY());
+        for (Entity ghost : ghosts) {
+            if (pacman.collidesWith(ghost)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public synchronized void movePacman(String direction) {
@@ -199,9 +199,11 @@ public class World {
         }
     }
 
+
     public synchronized void moveGhosts() {
-        ghost1.move(maze, rows, cols);
-        ghost2.move(maze, rows, cols);
+        for (Entity ghost : ghosts) {
+            ghost.move(maze, rows, cols);
+        }
     }
 
     public synchronized boolean gameFinished() {
@@ -213,13 +215,16 @@ public class World {
         if (lives > 0) {
             pacman.setX(1);
             pacman.setY(1);
-            ghost1.setX(rows - 2);
-            ghost1.setY(cols - 2);
-            ghost2.setX(rows - 2);
-            ghost2.setY(1);
+
+            // Reset all ghosts to starting positions
+            ghosts.get(0).setX(rows - 2);
+            ghosts.get(0).setY(cols - 2);
+            ghosts.get(1).setX(rows - 2);
+            ghosts.get(1).setY(1);
+
             System.out.println("\nGhost caught PacMan! Remaining lives: " + lives);
             try {
-                Thread.sleep(1500); // Pause to show message
+                Thread.sleep(1500);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
@@ -227,31 +232,26 @@ public class World {
     }
 
     public void play() {
-        // Start the raw input listener (no Enter key needed!)
         rawInput.start();
-        
-        // Give the Swing window time to initialize
+
         try {
             Thread.sleep(500);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-        
-        // Hide cursor for cleaner display
+
         ConsoleUtils.hideCursor();
 
-        // Main game loop
         long lastGhostMove = System.currentTimeMillis();
-        long ghostMoveInterval = 500; // Ghosts move every 500ms
+        long ghostMoveInterval = 600;
         long lastRender = System.currentTimeMillis();
-        long renderInterval = 150; // Render every 150ms (slightly slower for stability)
+        long renderInterval = 150;
 
         displayBoard();
 
         while (!gameFinished()) {
             long currentTime = System.currentTimeMillis();
 
-            // Process player input (non-blocking, no Enter needed!)
             char key = rawInput.getKey();
             if (key != 0) {
                 String command = String.valueOf(key).toLowerCase();
@@ -259,30 +259,26 @@ public class World {
                     System.out.println("\nGame quit by user!");
                     break;
                 }
-                if (command.equals("w") || command.equals("a") || 
-                    command.equals("s") || command.equals("d")) {
+                if (command.equals("w") || command.equals("a") ||
+                        command.equals("s") || command.equals("d")) {
                     movePacman(command);
                 }
             }
 
-            // Move ghosts periodically
             if (currentTime - lastGhostMove >= ghostMoveInterval) {
                 moveGhosts();
                 lastGhostMove = currentTime;
 
-                // Check collision after ghost movement
                 if (detectCollision()) {
                     resetPositions();
                 }
             }
 
-            // Render periodically
             if (currentTime - lastRender >= renderInterval) {
                 displayBoard();
                 lastRender = currentTime;
             }
 
-            // Small sleep to prevent CPU spinning
             try {
                 Thread.sleep(30);
             } catch (InterruptedException e) {

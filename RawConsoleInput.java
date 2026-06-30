@@ -1,20 +1,19 @@
 import javax.swing.*;
-import java.awt.*;
+import java.awt.*; //abstract window toolkit
 import java.awt.event.*;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentLinkedQueue; //allows multiple programs to exectue simultaneously
 
-/**
- * Provides raw keyboard input using a small Swing window.
- * Keys are captured instantly without needing Enter.
- */
+// Provides raw keyboard input using a small Swing window.
+// Keys are captured instantly without needing Enter.
+
 public class RawConsoleInput {
     private volatile boolean running = true; //changes to this are immediatly visible to all threads, hence volatile
     private ConcurrentLinkedQueue<Character> keyQueue = new ConcurrentLinkedQueue<>();
-    private JFrame frame;
+    private JFrame frame; //used to create main window of program
     
-    /**
-     * Starts the input listener with a small key capture window.
-     */
+
+     //Starts the input listener with a small key capture window.
+
     public void start() {
         running = true;
         
@@ -54,26 +53,25 @@ public class RawConsoleInput {
             frame.requestFocus();
         });
     }
-    
-    /**
-     * Gets the next key pressed and removes it from queue.
-     * return The key character, or 0 if no key was pressed.
-     */
+
+     // Gets the next key pressed and removes it from queue.
+     // return The key character, or 0 if no key was pressed.
+
     public char getKey() {
         Character key = keyQueue.poll();
         return key != null ? key : 0;
     }
     
-    /**
-     * Checks if a key is available.
-     */
+
+    // Checks if a key is available.
+
     public boolean hasKey() {
         return !keyQueue.isEmpty();
     }
     
-    /**
-     * Stops the input listener and closes the window.
-     */
+
+     // Stops the input listener and closes the window.
+
     public void stop() {
         running = false;
         if (frame != null) {
